@@ -1,4 +1,6 @@
 const {request, response} = require('express')
+const Usuario = require("../models/usuario")
+const bcryptjs = require("bcryptjs")
 
 // http://localhost:8080/api/us?q=hola&nombre=mario&pkey=123
 const userGet= (req, res) => {
@@ -8,11 +10,24 @@ const userGet= (req, res) => {
         query
     });
 } 
-const userPost= (req, res) => {
-    const body = req.body
+const userPost= async (req, res) => {
+    const {nombre,correo, contraseña,rol} = req.body
+    const usuario = new Usuario({nombre,correo, contraseña,rol})
+    //verificar si el correo existe
+    const correExiste= await Usuario.findOne({correo})
+    if(correExiste){
+        return res.status(400).json({
+            "msj": "Este email ya esta registrado"
+        })
+    }
+    //encriptar la pswd
+    const salt=bcryptjs.genSaltSync()
+    usuario.contraseña= bcryptjs.hashSync(contraseña,salt)
+    //guardar en bd
+    await usuario.save()
     res.json({
         "msj": "Post!",
-        body
+        usuario
 
     });
 } 
